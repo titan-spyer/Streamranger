@@ -7,6 +7,23 @@
 #include <sstream>
 #include <ESP32Servo.h>
 #include <Servo.h>
+#include <SoftwareSerial.h>
+#include <TinyGPS++.h>
+  
+  #define RX_PIN 2
+  #define TX_IN 4
+
+// Define the serial connection to the GPS module
+
+SoftwareSerial ss(RX_PIN, TX_PIN);
+
+// Define the GPS object
+
+TinyGPSPlus gps;
+
+// Define a variable to store the GPS location
+
+String location;
 
 #define trigPin 14 // ultrasonic sensor trigger pin
 #define echoPin 12 // ultrasonic sensor echo pin
@@ -48,61 +65,6 @@ std::vector<MOTOR_PINS> motorPins =
   {2, 12, 13}, //RIGHT_MOTOR Pins (EnA, IN1, IN2)
   {2, 1, 3},  //LEFT_MOTOR  Pins (EnB, IN3, IN4)
 };
-
-void setup() {
-  pinMode(trigPin, OUTPUT); // set the trigger pin as output
-  pinMode(echoPin, INPUT); // set the echo pin as input
-  myservo.attach(servoPin); // attach the servo motor to the designated pin
-  
-  pinMode(motor1A, OUTPUT); // set motor 1A pin as output
-  pinMode(motor1B, OUTPUT); // set motor 1B pin as output
-  pinMode(motor2A, OUTPUT); // set motor 2A pin as output
-  pinMode(motor2B, OUTPUT); // set motor 2B pin as output
-  
-  Serial.begin(9600); // start serial communication
-}
-
-void loop() {
-  // get ultrasonic sensor reading
-  long duration, distance;
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH);
-  distance = duration * 0.034 / 2;
-
-  if (distance < 10) { // if there is an obstacle within 10 cm
-    myservo.write(0); // rotate the servo motor to the left
-    delay(500);
-  } else if (distance > 30) { // if there is no obstacle within 30 cm
-    myservo.write(180); // rotate the servo motor to the right
-    delay(500);
-  } else { // if there is an obstacle within 10-30 cm
-    myservo.write(90); // keep the servo motor in the middle
-    delay(500);
-  }
-
-  // control the DC motors based on ultrasonic sensor reading
-  if (distance < 10) { // if there is an obstacle within 10 cm
-    digitalWrite(motor1A, HIGH); // turn on the left DC motor 1
-    digitalWrite(motor1B, LOW);
-    digitalWrite(motor2A, HIGH); // turn on the left DC motor 2
-    digitalWrite(motor2B, LOW);
-  } else if (distance > 30) { // if there is no obstacle within 30 cm
-    digitalWrite(motor1A, LOW); // turn off the left DC motor 1
-    digitalWrite(motor1B, LOW);
-    digitalWrite(motor2A, LOW); // turn off the left DC motor 2
-    digitalWrite(motor2B, LOW);
-  } else { // if there is an obstacle within 10-30 cm
-    digitalWrite(motor1A, HIGH); // turn on both left DC motors to go forward
-    digitalWrite(motor1B, LOW);
-    digitalWrite(motor2A, HIGH);
-    digitalWrite(motor2B, LOW);
-  }
-}
-``
 
 const int PWMFreq = 1000; /* 1 KHz */
 const int PWMResolution = 8;
@@ -315,6 +277,101 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
 </html>
 )HTMLHOMEPAGE";
 
+// Define the setup function
+
+void gps_setup() {
+
+  // Start the serial communication with the GPS module
+
+  ss.begin(9600);
+
+}
+
+// Define the loop function
+
+void gps_loop() {
+
+  // Read data from the GPS module
+
+  while (ss.available() > 0) {
+
+    gps.encode(ss.read());
+
+  }
+
+  // Check if a new location is available
+
+  if (gps.location.isUpdated()) {
+
+    // Get the latitude and longitude values
+
+    double latitude = gps.location.lat();
+
+    double longitude = gps.location.lng();
+
+    
+
+    // Convert the latitude and longitude values to a string and store in the location variable
+
+    location = String(latitude, 6) + "," + String(longitude, 6);
+
+  }
+
+}
+
+void setup_ultrasonic() {
+  pinMode(trigPin, OUTPUT); // set the trigger pin as output
+  pinMode(echoPin, INPUT); // set the echo pin as input
+  myservo.attach(servoPin); // attach the servo motor to the designated pin
+  
+  pinMode(motor1A, OUTPUT); // set motor 1A pin as output
+  pinMode(motor1B, OUTPUT); // set motor 1B pin as output
+  pinMode(motor2A, OUTPUT); // set motor 2A pin as output
+  pinMode(motor2B, OUTPUT); // set motor 2B pin as output
+  
+  Serial.begin(9600); // start serial communication
+}
+
+void loop_ultrasonic() {
+  // get ultrasonic sensor reading
+  long duration, distance;
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+
+  if (distance < 10) { // if there is an obstacle within 10 cm
+    myservo.write(0); // rotate the servo motor to the left
+    delay(500);
+  } else if (distance > 30) { // if there is no obstacle within 30 cm
+    myservo.write(180); // rotate the servo motor to the right
+    delay(500);
+  } else { // if there is an obstacle within 10-30 cm
+    myservo.write(90); // keep the servo motor in the middle
+    delay(500);
+  }
+
+  // control the DC motors based on ultrasonic sensor reading
+  if (distance < 10) { // if there is an obstacle within 10 cm
+    digitalWrite(motor1A, HIGH); // turn on the left DC motor 1
+    digitalWrite(motor1B, LOW);
+    digitalWrite(motor2A, HIGH); // turn on the left DC motor 2
+    digitalWrite(motor2B, LOW);
+  } else if (distance > 30) { // if there is no obstacle within 30 cm
+    digitalWrite(motor1A, LOW); // turn off the left DC motor 1
+    digitalWrite(motor1B, LOW);
+    digitalWrite(motor2A, LOW); // turn off the left DC motor 2
+    digitalWrite(motor2B, LOW);
+  } else { // if there is an obstacle within 10-30 cm
+    digitalWrite(motor1A, HIGH); // turn on both left DC motors to go forward
+    digitalWrite(motor1B, LOW);
+    digitalWrite(motor2A, HIGH);
+    digitalWrite(motor2B, LOW);
+  }
+}
 
 void rotateMotor(int motorNumber, int motorDirection)
 {
