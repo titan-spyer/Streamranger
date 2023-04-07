@@ -5,17 +5,17 @@
 #include <ESPAsyncWebServer.h>
 #include <iostream>
 #include <sstream>
-#include <ESP32Servo.h>
-#include <Servo.h>
-#include <SoftwareSerial.h>
+#include <ESP32_Servo.h>
+#include <ESP32_Servo.h>
+#include <HardwareSerial.h>
 #include <TinyGPS++.h>
   
   #define RX_PIN 2
-  #define TX_IN 4
+  #define TX_PIN 4
 
 // Define the serial connection to the GPS module
 
-SoftwareSerial ss(RX_PIN, TX_PIN);
+HardwareSerial ss(1);
 
 // Define the GPS object
 
@@ -116,7 +116,6 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
       transform: translate(5px,5px);
       box-shadow: none; 
     }
-
     .noselect {
       -webkit-touch-callout: none; /* iOS Safari */
         -webkit-user-select: none; /* Safari */
@@ -126,11 +125,9 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
                 user-select: none; /* Non-prefixed version, currently
                                       supported by Chrome and Opera */
     }
-
     .slidecontainer {
       width: 100%;
     }
-
     .slider {
       -webkit-appearance: none;
       width: 100%;
@@ -142,7 +139,6 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
       -webkit-transition: .2s;
       transition: opacity .2s;
     }
-
     .slider:hover {
       opacity: 1;
     }
@@ -156,7 +152,6 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
       background: red;
       cursor: pointer;
     }
-
     .slider::-moz-range-thumb {
       width: 25px;
       height: 25px;
@@ -164,7 +159,6 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
       background: red;
       cursor: pointer;
     }
-
     </style>
   
   </head>
@@ -261,7 +255,6 @@ const char* htmlHomePage PROGMEM = R"HTMLHOMEPAGE(
         initCameraWebSocket ();
         initCarInputWebSocket();
       }
-
       function sendButtonInput(key, value) 
       {
         var data = key + "," + value;
@@ -283,7 +276,7 @@ void gps_setup() {
 
   // Start the serial communication with the GPS module
 
-  ss.begin(9600);
+  ss.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
 
 }
 
